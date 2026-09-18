@@ -37,8 +37,12 @@ class Settings(BaseSettings):
     fallback_provider_model: str = Field(default="openai/gpt-oss-120b")
 
     # --- call behaviour ---
-    llm_timeout_seconds: float = Field(default=8.0)
-    llm_max_retries: int = Field(default=2)
+    #: A normal answer lands in 2-4s; past 6s the call is almost certainly hung,
+    #: so waiting longer only delays the move to the next model.
+    llm_timeout_seconds: float = Field(default=6.0)
+    #: One shot at the primary model. Retrying a hung model burns the budget the
+    #: fallback model needs, so a timeout goes straight down the ladder instead.
+    llm_max_retries: int = Field(default=1)
     #: Wall-clock ceiling for the whole interpretation stage. Without it, every
     #: attempt hanging to its own timeout could exceed the judge's 30s per-request
     #: limit; once this is spent we stop calling providers and interpret

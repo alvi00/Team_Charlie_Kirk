@@ -64,8 +64,8 @@ this repository** — only variable names.
 | `FALLBACK_PROVIDER_API_KEY` | Optional **cross-provider** failover. Leave empty to disable. | *(empty)* |
 | `FALLBACK_PROVIDER_BASE_URL` | Failover provider base URL (any OpenAI-compatible vendor) | `https://api.groq.com/openai/v1` |
 | `FALLBACK_PROVIDER_MODEL` | Failover model id | `openai/gpt-oss-120b` |
-| `LLM_TIMEOUT_SECONDS` | Per-call HTTP timeout | `8` |
-| `LLM_MAX_RETRIES` | Attempts on the primary model before moving down the ladder | `2` |
+| `LLM_TIMEOUT_SECONDS` | Per-call HTTP timeout. A normal answer takes 2–4 s; past 6 s the call is treated as hung and the next model is tried. | `6` |
+| `LLM_MAX_RETRIES` | Attempts on the primary model before moving down the ladder. Kept at 1 so a hung primary hands the same request to the fallback model rather than being retried. | `1` |
 | `LLM_TOTAL_BUDGET_SECONDS` | Wall-clock ceiling for the whole interpretation stage. Once spent, the service stops calling providers and interprets deterministically, so a hanging provider can never push a request past the judge's 30s limit. | `12` |
 | `LLM_REASONING_EFFORT` | Sent to reasoning models; dropped automatically if rejected | `low` |
 | `PORT` | Listen port (honoured by Railway and the Docker image) | `8000` |
