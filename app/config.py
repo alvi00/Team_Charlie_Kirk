@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     groq_fallback_model: str = Field(default="openai/gpt-oss-20b")
     llm_timeout_seconds: float = Field(default=8.0)
     llm_max_retries: int = Field(default=2)
+    #: Wall-clock ceiling for the whole interpretation stage. Without it, every
+    #: attempt hanging to its own timeout could exceed the judge's 30s per-request
+    #: limit; once this is spent we stop calling the provider and interpret
+    #: deterministically instead.
+    llm_total_budget_seconds: float = Field(default=12.0)
 
     # --- service ---
     port: int = Field(default=8000)
@@ -41,6 +46,7 @@ class Settings(BaseSettings):
             "groq_fallback_model": self.groq_fallback_model,
             "llm_timeout_seconds": self.llm_timeout_seconds,
             "llm_max_retries": self.llm_max_retries,
+            "llm_total_budget_seconds": self.llm_total_budget_seconds,
             "llm_configured": self.llm_configured,
             "port": self.port,
             "log_level": self.log_level,

@@ -15,6 +15,7 @@ main path.
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass, field
 from typing import Any, Sequence
 
@@ -117,6 +118,17 @@ def _interpret_uncached(
     last_error = "not attempted"
     last_content = ""
 
+    # Wall-clock budget for the whole stage. Each individual call has its own
+    # timeout, but several of them in series could otherwise push a single
+    # request past the judge's 30s ceiling.
+    deadline = time.monotonic() + settings.llm_total_budget_seconds
+
+    def budget_left() -> bool:
+        if time.monotonic() < deadline:
+            return True
+        log.warning("interpretation budget spent; falling back deterministically")
+        return False
+
     if client.configured:
         attempts: list[tuple[str, str]] = [
             *((settings.groq_model, "llm") for _ in range(max(1, settings.llm_max_retries))),
@@ -128,6 +140,8 @@ def _interpret_uncached(
         for model, source in attempts:
             if model in exhausted:
                 continue
+            if not budget_left():
+                break
             try:
                 reply = client.chat_json(messages, model)
                 last_content = reply["content"]
@@ -148,7 +162,7 @@ def _interpret_uncached(
                     continue
 
                 # one repair call, carrying the complaint back to the model
-                if not repaired and last_content:
+                if not repaired and last_content and budget_left():
                     repaired = True
                     try:
                         reply = client.chat_json(

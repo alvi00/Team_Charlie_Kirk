@@ -53,8 +53,11 @@ _REMAINING_PATTERNS = [
     re.compile(rf"{_NUM}\s*(?:%|percent)\s+of\b", re.I),
 ]
 
+#: "reduced by half", and also "cut array output by half" - the verb and the
+#: "by <fraction>" are often separated by the thing being reduced.
 _WORD_REMOVED_RE = re.compile(
-    r"(?:reduc\w*|drop\w*|fall\w*|decreas\w*|declin\w*|down|cut|lower\w*|less)\s+by\s+"
+    r"(?:reduc\w*|drop\w*|fall\w*|decreas\w*|declin\w*|down|cut\w*|lower\w*|less|trim\w*)"
+    r"(?:\s+\w+){0,3}?\s+by\s+"
     r"(?:about\s+|roughly\s+|around\s+)?(" + "|".join(sorted(_WORD_FRACTIONS, key=len, reverse=True)) + r")\b",
     re.I,
 )

@@ -59,6 +59,7 @@ this repository** — only variable names.
 | `GROQ_FALLBACK_MODEL` | Used if the primary errors or rate-limits | `openai/gpt-oss-20b` |
 | `LLM_TIMEOUT_SECONDS` | Per-call HTTP timeout | `8` |
 | `LLM_MAX_RETRIES` | Attempts on the primary model before falling back | `2` |
+| `LLM_TOTAL_BUDGET_SECONDS` | Wall-clock ceiling for the whole interpretation stage. Once spent, the service stops calling the provider and interprets deterministically, so a hanging provider can never push a request past the judge's 30s limit. | `12` |
 | `PORT` | Listen port (honoured by the Docker image) | `8000` |
 | `LOG_LEVEL` | Python log level | `INFO` |
 

@@ -18,20 +18,23 @@ from .timeparse import parse_hour_windows
 #: outage word - covers "the charging circuit will be unavailable", "chargers are
 #: locked out", "the battery charger will be isolated".
 _NO_CHARGE_RE = re.compile(
-    r"(?:\bdo(?:\s+not|n'?t)\s+charg|\bno\s+(?:battery\s+)?charging\b|\bnot\s+be\s+charged\b|"
+    r"(?:\bdo(?:\s+not|n'?t)\s+charg|\b(?:avoid|refrain\s+from|cease|stop|suspend|halt)\s+"
+    r"(?:\w+\s+){0,2}?charg|\bno\s+(?:\w+\s+){0,2}?charging\b|\bnot\s+be\s+charged\b|"
     r"charg(?:e|er|ers|ing|e\s+point)\w*(?:\s+\w+){0,4}?\s+(?:un)?(?:available|disabled|offline|"
     r"isolated|suspended|locked|prohibited|blocked|down|out\s+of\s+service))",
     re.IGNORECASE,
 )
 _NO_DISCHARGE_RE = re.compile(
-    r"(?:\bdo(?:\s+not|n'?t)\s+discharg|\bno\s+discharging\b|\bmust\s+not\s+discharg|"
+    r"(?:\bdo(?:\s+not|n'?t)\s+discharg|\b(?:avoid|refrain\s+from|cease|stop|halt)\s+"
+    r"(?:\w+\s+){0,2}?discharg|\bno\s+(?:\w+\s+){0,2}?discharging\b|\bmust\s+not\s+discharg|"
     r"\bnot\s+be\s+discharged\b|discharg\w*\s+(?:is\s+|are\s+)?(?:un)?(?:available|disabled|"
     r"prohibited|blocked)|\bnot\s+be\s+drawn\s+down\b)",
     re.IGNORECASE,
 )
 _RESERVE_RE = re.compile(
-    r"(?:\bat\s+least\b|\bno\s+less\s+than\b|\bminimum\b|\bkeep\b|\bhold\b|\breserve\b|"
-    r"\bremain\s+in\s+the\s+battery\b|\bstay\s+above\b)",
+    r"(?:\bat\s+least\b|\bno\s+less\s+than\b|\bno\s+lower\s+than\b|\bminimum\b|\bfloor\s+of\b|"
+    r"\bkeep\b|\bhold\b|\breserve\b|\bremain\s+in\s+the\s+battery\b|\bstay\s+(?:above|at\s+or\s+above)\b|"
+    r"\bnot\s+(?:drop|fall)\s+below\b|\bmaintain\b)",
     re.IGNORECASE,
 )
 _GRID_RE = re.compile(

@@ -312,6 +312,29 @@ def test_rule_based_fallback_handles_reserve_and_grid_cap():
     assert got[1]["structured_adjustment"]["max_grid_kwh"] == 155.0
 
 
+def test_rule_based_fallback_handles_paraphrased_wording():
+    """Phrasings that the earlier regexes missed, all of which the fallback has
+    to survive because it is what answers during a provider outage."""
+    cases = [
+        ("Haze will cut array output by half from 10 AM until 1 PM.",
+         "solar_reduction", {"hours": [10, 11, 12], "factor": 0.5}),
+        ("Emergency services need a floor of 95 kWh in storage between 6 PM and 9 PM.",
+         "minimum_battery_reserve", {"hours": [18, 19, 20], "minimum_energy_kwh": 95.0}),
+        ("Please avoid charging the battery from 2 PM until 5 PM while the feeder is tested.",
+         "no_charge_window", {"hours": [14, 15, 16]}),
+        ("No battery discharging from 8 PM until 11 PM tonight.",
+         "no_discharge_window", {"hours": [20, 21, 22]}),
+        ("The charge point is out of service between 9 AM and 11 AM.",
+         "no_charge_window", {"hours": [9, 10]}),
+        ("Substation constrained: grid intake must stay at or below 165 kWh from 19:00 to 22:00.",
+         "max_grid_window", {"hours": [19, 20, 21], "max_grid_kwh": 165.0}),
+    ]
+    for note, directive_type, adjustment in cases:
+        got = interpret_rule_based([note], 220.0)[0]
+        assert got["directive_type"] == directive_type, f"{note}: {got['directive_type']}"
+        assert got["structured_adjustment"] == adjustment, f"{note}: {got['structured_adjustment']}"
+
+
 def test_rule_based_fallback_marks_distractors_no_op():
     notes = [
         "The sports office moved next month's registration deadline.",
