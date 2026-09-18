@@ -8,7 +8,7 @@ lists; these models only guard the boundary.
 from __future__ import annotations
 
 import math
-from typing import Annotated, Literal, Union
+from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -157,8 +157,11 @@ class NoDischargeWindowAdjustment(_AdjustmentBase):
     pass
 
 
-# Ordered most-specific first: the window adjustments carry only ``hours`` and
-# would otherwise swallow the keyed variants under a left-to-right union.
+# NOTE: no_charge_window and no_discharge_window are structurally identical - both
+# carry only ``hours`` - so a union cannot tell them apart from the payload alone.
+# DirectiveInterpretation therefore builds the adjustment from ``directive_type``
+# in a "before" validator rather than letting the union guess; leaving it to the
+# union silently coerces every no_discharge_window into a no_charge_window.
 StructuredAdjustment = Union[
     SolarReductionAdjustment,
     MinimumBatteryReserveAdjustment,
@@ -192,6 +195,26 @@ class DirectiveInterpretation(BaseModel):
     directive_type: DirectiveType
     structured_adjustment: StructuredAdjustment | None = None
     explanation: str = Field(min_length=1, max_length=200)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _bind_adjustment_to_type(cls, data: Any) -> Any:
+        """Build the adjustment from ``directive_type``, not by union guessing.
+
+        ``no_charge_window`` and ``no_discharge_window`` have identical payloads,
+        so the union would always resolve both to the first one declared.
+        """
+        if not isinstance(data, dict):
+            return data
+        model = ADJUSTMENT_MODEL_FOR_TYPE.get(data.get("directive_type"))
+        adjustment = data.get("structured_adjustment")
+        if model is None or adjustment is None:
+            return data
+        if isinstance(adjustment, BaseModel):
+            adjustment = adjustment.model_dump()
+        if isinstance(adjustment, dict):
+            return {**data, "structured_adjustment": model(**adjustment)}
+        return data
 
     @model_validator(mode="after")
     def _applies_semantics(self) -> "DirectiveInterpretation":
