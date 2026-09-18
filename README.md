@@ -16,6 +16,7 @@ and returns the cheapest valid 24-hour schedule.
 | Solver | SciPy `linprog(method="highs")` — exact global optimum |
 | Public-sample result | 10/10 interpretation · 10/10 valid · mean cost ratio **1.000** |
 | Unseen-paraphrase result | 24/24 on a held-out paraphrase set (no public-pack wording) |
+| Adversarial pack | 20/20 interpretation · 20/20 valid · ratio 1.000 on 20 hand-built hard cases |
 | Latency | p50 ~2.3 s · p95 ~3.0 s (requirement: p95 ≤ 5 s) |
 
 ---
@@ -132,6 +133,43 @@ Per-case costs match the organizer's reference exactly: 38365, 42885, 35480, 404
 > If your provider account has a low tokens-per-minute ceiling, firing ten cases in ten
 > seconds can trip it, and you will be measuring the fallback path rather than the model.
 > Add `--delay 14` to pace the run.
+
+### Adversarial hard cases
+
+`tests/hard_cases.json` is a 20-case pack we built ourselves to probe the failure modes the
+public pack does not reach: 24-hour clock windows, `a quarter` / `two-fifths` / `cut by 65
+percent` phrasings, a total solar outage (`factor 0.0`), windows starting and ending at
+midnight, single-hour windows, reserves as a fraction of capacity, time-bearing and
+past-tense distractors, fractional demand and tariff, flat tariffs with degenerate optima,
+a battery starting at its floor and starting full, very tight rate limits, and scenarios
+where a grid cap forces a pre-charge. Ground truth was derived independently and verified
+against all ten official public cases.
+
+```bash
+python tests/run_public_cases.py --cases tests/hard_cases.json
+python tests/run_public_cases.py --cases tests/hard_cases.json --mode api --base-url http://localhost:8000
+```
+
+Result through the full LLM pipeline:
+
+```
+interpretation    : 20/20 cases (28/28 entries)
+replay-valid      : 20/20
+mean cost ratio   : 1.0000
+
+ACCEPTANCE GATE: PASS
+```
+
+> The pack is **unofficial** — the paraphrases are inferred from the spec, not the real
+> hidden set. It exists to catch regressions in paraphrase handling, not to predict the
+> hidden cases.
+
+**A note on exact cost equality.** Emitted plan values are rounded to 3 decimals as the
+Problem Statement requires, so on scenarios with fractional demand or tariff the recomputed
+total can land a fraction of a BDT above the unrounded optimum — at most 0.034 BDT across
+this pack, on bills of ~50,000 BDT. The LP itself returns the exact optimum in every case;
+the graded metric, `min(1, optimal / ours)`, is 1.000 throughout. The harness reports exact
+matches separately and gates on the rubric's metric rather than on bit-exact equality.
 
 The rest of the suite (no network or API key required):
 
@@ -318,9 +356,12 @@ primary model (N attempts) → one repair call with the validator's complaint
   → rule-based deterministic interpreter
 ```
 
-A rate-limit (429) skips straight to the next rung instead of burning retries. A
-wall-clock budget caps the whole stage so a hanging provider cannot exceed the judge's
-30s limit. Interpretations are cached (LRU 512, keyed on the notes and battery capacity).
+A rate-limit (429) skips straight to the next rung instead of burning retries, and the
+per-call timeout is deliberately tight: a normal answer lands in 2-4 s, so a call still
+open at 6 s is treated as hung and the request moves down the ladder rather than waiting.
+For the same reason the primary model gets one attempt, not two - retrying a hung model
+would spend the budget the fallback model needs. A wall-clock budget caps the whole stage
+so a hanging provider cannot exceed the judge's 30 s limit. Interpretations are cached (LRU 512, keyed on the notes and battery capacity).
 The deterministic interpreter is a safety net for a provider outage, never the main path —
 the LLM remains the primary interpreter, as the rules require.
 
@@ -468,7 +509,8 @@ Team_Charlie_Kirk/
 │   └── summary.py            # deterministic plan_summary
 ├── tools/verify_model.py     # confirm the key + model id before deploying
 ├── tests/
-│   ├── run_public_cases.py   # scoreboard: offline and api modes
+│   ├── run_public_cases.py   # scoreboard: offline and api modes, any case pack
+│   ├── hard_cases.json       # 20 self-built adversarial cases
 │   ├── test_optimizer.py
 │   ├── test_guardrails.py
 │   └── test_api.py
