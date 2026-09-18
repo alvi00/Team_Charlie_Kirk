@@ -16,7 +16,7 @@ and returns the cheapest valid 24-hour schedule.
 | Solver | SciPy `linprog(method="highs")` — exact global optimum |
 | Public-sample result | 10/10 interpretation · 10/10 valid · mean cost ratio **1.000** |
 | Unseen-paraphrase result | 24/24 on a held-out paraphrase set (no public-pack wording) |
-| Latency | p50 2.1 s · p95 3.0 s (requirement: p95 ≤ 5 s) |
+| Latency | p50 ~2.5 s · p95 ~4.3 s (requirement: p95 ≤ 5 s) |
 
 ---
 
@@ -25,7 +25,7 @@ and returns the cheapest valid 24-hour schedule.
 From a clean machine:
 
 ```bash
-git clone <YOUR-REPO-URL> && cd gridwise
+git clone https://github.com/alvi00/Team_Charlie_Kirk.git && cd Team_Charlie_Kirk
 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
@@ -360,10 +360,10 @@ readiness requirement, and restarts on failure up to 3 times.
 **The judge's command** — pull and run, nothing else needed:
 
 ```bash
-docker pull <DOCKERHUB-USER>/gridwise-llm:preli-v1
+docker pull alvi00/team_charlie_kirk:preli-v1
 
 docker run --rm -p 8000:8000 -e OPENAI_API_KEY=<your-key> \
-  <DOCKERHUB-USER>/gridwise-llm:preli-v1
+  alvi00/team_charlie_kirk:preli-v1
 
 curl localhost:8000/health        # {"status":"ok"}
 ```
@@ -371,9 +371,9 @@ curl localhost:8000/health        # {"status":"ok"}
 To build and publish it:
 
 ```bash
-docker build -t <DOCKERHUB-USER>/gridwise-llm:preli-v1 .
+docker build -t alvi00/team_charlie_kirk:preli-v1 .
 docker login
-docker push <DOCKERHUB-USER>/gridwise-llm:preli-v1
+docker push alvi00/team_charlie_kirk:preli-v1
 ```
 
 Verified locally on `python:3.11-slim`:
@@ -381,18 +381,21 @@ Verified locally on `python:3.11-slim`:
 | Check | Result |
 |---|---|
 | Image size | 557 MB |
-| `/health` ready after start | **1 s** (requirement: < 60 s) |
-| Public sample cases in-container | 10/10 interpretation · 10/10 valid · ratio 1.000 · p95 3.2 s |
+| `/health` ready after start | **2 s** (requirement: < 60 s) |
+| Public sample cases in-container | 10/10 interpretation · 10/10 valid · ratio 1.000 · p95 2.9 s |
 | Starts with **no** API key | yes — serves a valid schedule via the deterministic interpreter |
 | `.env` present inside the image | no |
 | Key material anywhere in the image | none |
+| Platform | `linux/amd64` |
+| Anonymous pull (no Docker Hub account) | verified — registry manifest returns HTTP 200 |
 
 - Exposed port: **8000**; the container binds `0.0.0.0` and honours `$PORT`.
 - **No secrets are baked into the image.** `OPENAI_API_KEY` is supplied at run time with
   `-e`, and `.dockerignore` excludes `.env` from the build context. The only baked
   environment variables are `PYTHONDONTWRITEBYTECODE`, `PYTHONUNBUFFERED` and `PORT=8000`.
-- Image tag: `<DOCKERHUB-USER>/gridwise-llm:preli-v1`
-- Digest: `sha256:<FILL-IN>` — copy the digest printed by `docker push`.
+- Image tag: `alvi00/team_charlie_kirk:preli-v1` (**public**, pullable without credentials)
+- Digest: `sha256:974bcf67ebf696751f352248167499ee9d7aff4a093fff990a7f418457a73459`
+- Pinned-by-digest pull: `docker pull alvi00/team_charlie_kirk@sha256:974bcf67ebf696751f352248167499ee9d7aff4a093fff990a7f418457a73459`
 
 ---
 
@@ -444,7 +447,7 @@ assistant (Claude); the architecture, formulation and guardrail logic are the te
 ## 7. Repository layout
 
 ```
-gridwise/
+Team_Charlie_Kirk/
 ├── app/
 │   ├── main.py               # FastAPI app, routes, pipeline, exception handlers
 │   ├── config.py             # env configuration (no secrets in code)
