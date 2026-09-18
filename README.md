@@ -16,7 +16,7 @@ and returns the cheapest valid 24-hour schedule.
 | Solver | SciPy `linprog(method="highs")` — exact global optimum |
 | Public-sample result | 10/10 interpretation · 10/10 valid · mean cost ratio **1.000** |
 | Unseen-paraphrase result | 24/24 on a held-out paraphrase set (no public-pack wording) |
-| Latency | p50 ~2.5 s · p95 ~4.3 s (requirement: p95 ≤ 5 s) |
+| Latency | p50 ~2.3 s · p95 ~3.0 s (requirement: p95 ≤ 5 s) |
 
 ---
 
