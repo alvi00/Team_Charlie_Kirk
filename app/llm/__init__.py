@@ -1,1 +1,1 @@
-"""LLM interpretation layer (Groq). Real client lands in P2."""
+"""LLM interpretation layer (OpenAI Chat Completions API)."""

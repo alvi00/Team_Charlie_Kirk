@@ -1,6 +1,6 @@
 """API contract and robustness tests (PROJECT.md 5, 12; rubric 'API Contract').
 
-Deliberately hermetic: ``GROQ_API_KEY`` is blanked before the app is imported, so
+Deliberately hermetic: the LLM API keys are blanked before the app is imported, so
 the service runs on its deterministic interpreter and these tests need no network
 and no quota. That also means they exercise the exact path a provider outage
 takes - which is the behaviour the 'controlled failure handling' marks reward.
@@ -23,7 +23,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 # must happen before app.config is imported: env beats the .env file
-os.environ["GROQ_API_KEY"] = ""
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["FALLBACK_PROVIDER_API_KEY"] = ""
 
 from fastapi.testclient import TestClient  # noqa: E402
 

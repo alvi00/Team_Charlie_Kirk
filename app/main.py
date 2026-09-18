@@ -23,7 +23,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import get_settings
-from .llm.interpreter import interpret_notes, reset_client
+from .llm.interpreter import interpret_notes, reset_client, warm_up
 from .optimizer.model import CompiledConstraints, Scenario, compile_directives
 from .optimizer.solve import InfeasibleError, SolveResult, solve
 from .schemas import (
@@ -50,7 +50,12 @@ async def lifespan(app: FastAPI):
     # safe_dump() never contains the API key
     log.info("gridwise starting: %s", settings.safe_dump())
     if not settings.llm_configured:
-        log.warning("GROQ_API_KEY is not set - the deterministic interpreter will be used")
+        log.warning("No LLM API key set - the deterministic interpreter will be used")
+    else:
+        # Background warm-up: opens the provider connection and learns the
+        # model's parameter profile so the first judged request does not pay for
+        # it. Never blocks readiness, never touches /health.
+        warm_up(settings)
     yield
     reset_client()
     log.info("gridwise shutting down")
@@ -163,8 +168,9 @@ def run_pipeline(request: OptimizeRequest) -> OptimizeResponse:
         # Logged only - the response never carries validator internals.
         log.warning("interpretation failed self-check: %s", interp_failures)
     log.info(
-        "interpretation source=%s model=%s types=%s",
+        "interpretation source=%s provider=%s model=%s types=%s",
         interpretation.source,
+        interpretation.provider,
         interpretation.model,
         [entry.directive_type for entry in entries],
     )
